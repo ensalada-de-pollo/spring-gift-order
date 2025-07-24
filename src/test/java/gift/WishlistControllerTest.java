@@ -15,6 +15,7 @@ import gift.wishlist.repository.WishlistRepository;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,51 +34,57 @@ public class WishlistControllerTest {
 
     private RestClient restClient;
 
-    String baseURL;
-
     @Autowired
     private ProductRepository productRepository;
     @Autowired
     private WishlistRepository wishlistRepository;
 
-    private String accessToken;
+    private static String accessToken;
+    private static Long memberId;
 
-    @BeforeEach
-    void setUp() {
-        baseURL = "http://localhost:" + port + "/api";
-        restClient = RestClient
-            .builder()
-            .baseUrl(baseURL + "/wishes")
+    private List<Product> products;
+
+    @BeforeAll
+    static void init(@LocalServerPort int port) {
+        RestClient temp = RestClient.builder()
+            .baseUrl("http://localhost:" + port + "/api/members/register")
             .build();
-        for (int i = 0; i < 5; i++) {
-            productRepository.save(
-                new Product(
-                    "상품" + i,
-                    10000L * i,
-                    "testURL"
-                )
-            );
-        }
 
-        accessToken = restClient.post()
-            .uri(baseURL + "/members/register")
+        var response = temp.post()
             .body(
                 new RegisterRequest(
-                    "test@gmail.com",
+                    "test1234@gmail.com",
                     "test1234",
                     UserRole.NORMAL
                 )
             )
             .retrieve()
             .toEntity(JwtResponse.class)
-            .getBody()
-            .accessToken();
+            .getBody();
 
+        memberId = response.id();
+        accessToken = response.accessToken();
+    }
+
+    @BeforeEach
+    void setUp() {
+        String baseURL = "http://localhost:" + port + "/api/wishes";
+        products = new ArrayList<>();
+        
         restClient = RestClient
             .builder()
-            .baseUrl(baseURL + "/wishes")
+            .baseUrl(baseURL)
             .defaultHeader("Authorization", "Bearer " + accessToken)
             .build();
+        for (int i = 0; i < 5; i++) {
+            products.add(productRepository.save(
+                new Product(
+                    "상품" + i,
+                    10000L * i,
+                    "testURL"
+                )
+            ));
+        }
     }
 
     @AfterEach
@@ -88,7 +95,7 @@ public class WishlistControllerTest {
     @Test
     void 위시_상품_추가_테스트() {
         // given
-        WishAddRequest wishAddRequest = new WishAddRequest(3L);
+        WishAddRequest wishAddRequest = new WishAddRequest(products.getFirst().getId());
 
         // when
         var response = restClient.post()
@@ -100,18 +107,18 @@ public class WishlistControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         WishResponse wishResponse = response.getBody();
         assertThat(wishResponse).isNotNull();
-        assertThat(wishResponse.id()).isEqualTo(1L);
-        assertThat(wishResponse.memberId()).isEqualTo(1L);
-        assertThat(wishResponse.productId()).isEqualTo(3L);
+        assertThat(wishResponse.id()).isNotNull();
+        assertThat(wishResponse.memberId()).isEqualTo(memberId);
+        assertThat(wishResponse.productId()).isEqualTo(products.getFirst().getId());
     }
 
     @Test
     void 위시_상품_조회_테스트() {
         // given
         List<WishAddRequest> wishAddRequestList = new ArrayList<>();
-        wishAddRequestList.add(new WishAddRequest(3L));
-        wishAddRequestList.add(new WishAddRequest(4L));
-        wishAddRequestList.add(new WishAddRequest(1L));
+        wishAddRequestList.add(new WishAddRequest(products.get(2).getId()));
+        wishAddRequestList.add(new WishAddRequest(products.get(3).getId()));
+        wishAddRequestList.add(new WishAddRequest(products.getFirst().getId()));
         for (WishAddRequest wishAddRequest : wishAddRequestList) {
             restClient.post()
                 .body(wishAddRequest)
@@ -134,7 +141,7 @@ public class WishlistControllerTest {
         for (int i = 0; i < wishAddRequestList.size(); i++) {
             WishAddRequest expected = wishAddRequestList.get(i);
             WishResponse actual = wishResponses.get(i);
-            assertThat(actual.memberId()).isEqualTo(1L);
+            assertThat(actual.memberId()).isEqualTo(memberId);
             assertThat(actual.productId()).isEqualTo(expected.productId());
         }
     }
@@ -143,9 +150,9 @@ public class WishlistControllerTest {
     void 위시_상품_삭제_테스트() {
         // given
         List<WishAddRequest> wishAddRequestList = new ArrayList<>();
-        wishAddRequestList.add(new WishAddRequest(3L));
-        wishAddRequestList.add(new WishAddRequest(4L));
-        wishAddRequestList.add(new WishAddRequest(1L));
+        wishAddRequestList.add(new WishAddRequest(products.get(2).getId()));
+        wishAddRequestList.add(new WishAddRequest(products.get(3).getId()));
+        wishAddRequestList.add(new WishAddRequest(products.getFirst().getId()));
         for (WishAddRequest wishAddRequest : wishAddRequestList) {
             restClient.post()
                 .body(wishAddRequest)
@@ -160,7 +167,7 @@ public class WishlistControllerTest {
 
         // when
         var response = restClient.delete()
-            .uri("/{wishId}", 1L)
+            .uri("/{wishId}", beforeResponse.getBody().getFirst().id())
             .retrieve()
             .toEntity(String.class);
 
@@ -178,8 +185,8 @@ public class WishlistControllerTest {
     @Test
     void 같은_상품을_위시리스트에_추가하려는_경우() {
         // given
-        WishAddRequest firstRequest = new WishAddRequest(3L);
-        WishAddRequest secondRequest = new WishAddRequest(3L);
+        WishAddRequest firstRequest = new WishAddRequest(products.get(2).getId());
+        WishAddRequest secondRequest = new WishAddRequest(products.get(2).getId());
         restClient.post()
             .body(firstRequest)
             .retrieve()
@@ -201,9 +208,9 @@ public class WishlistControllerTest {
     void 상품을_삭제했을_때_위시도_함께_삭제() {
         // given
         List<WishAddRequest> wishAddRequestList = new ArrayList<>();
-        wishAddRequestList.add(new WishAddRequest(3L));
-        wishAddRequestList.add(new WishAddRequest(4L));
-        wishAddRequestList.add(new WishAddRequest(1L));
+        wishAddRequestList.add(new WishAddRequest(products.get(4).getId()));
+        wishAddRequestList.add(new WishAddRequest(products.get(3).getId()));
+        wishAddRequestList.add(new WishAddRequest(products.getFirst().getId()));
         for (WishAddRequest wishAddRequest : wishAddRequestList) {
             restClient.post()
                 .body(wishAddRequest)
@@ -217,8 +224,10 @@ public class WishlistControllerTest {
         int beforeSize = beforeResponse.getBody().size();
 
         // when
+        System.out.println("상품 id: " + beforeResponse.getBody().getFirst().productId());
         var response = restClient.delete()
-            .uri(baseURL + "/products/{productId}", 4L)
+            .uri("http://localhost:" + port + "/api/products/{productId}",
+                beforeResponse.getBody().getFirst().productId())
             .retrieve()
             .toEntity(String.class);
 

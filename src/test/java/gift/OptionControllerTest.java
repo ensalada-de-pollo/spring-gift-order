@@ -31,22 +31,23 @@ public class OptionControllerTest {
 
     private RestClient restClient;
 
-    String baseURL;
-
     @Autowired
     private ProductRepository productRepository;
     @Autowired
     private OptionRepository optionRepository;
 
+    private Product mockProduct;
+
     @BeforeEach
     void setUp() {
-        baseURL = "http://localhost:" + port + "/api/products";
+        String baseURL = "http://localhost:" + port + "/api/products";
+
         restClient = RestClient
             .builder()
             .baseUrl(baseURL)
             .build();
 
-        productRepository.save(
+        mockProduct = productRepository.save(
             new Product(
                 "상품1",
                 12341234L,
@@ -71,7 +72,7 @@ public class OptionControllerTest {
 
         // when
         var response = restClient.post()
-            .uri("/{productId}/options", 1)
+            .uri("/{productId}/options", mockProduct.getId())
             .body(optionAddRequest)
             .retrieve()
             .toEntity(OptionResponse.class);
@@ -80,10 +81,9 @@ public class OptionControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         OptionResponse optionResponse = response.getBody();
         assertThat(optionResponse).isNotNull();
-        assertThat(optionResponse.id()).isEqualTo(1L);
         assertThat(optionResponse.name()).isEqualTo("옵션1");
         assertThat(optionResponse.quantity()).isEqualTo(900L);
-        assertThat(optionResponse.productId()).isEqualTo(1L);
+        assertThat(optionResponse.productId()).isEqualTo(mockProduct.getId());
     }
 
     @Test
@@ -95,7 +95,7 @@ public class OptionControllerTest {
         requests.add(new OptionAddRequest("옵션3", 300L));
         for (OptionAddRequest request : requests) {
             restClient.post()
-                .uri("/{productId}/options", 1)
+                .uri("/{productId}/options", mockProduct.getId())
                 .body(request)
                 .retrieve()
                 .toEntity(OptionResponse.class);
@@ -103,7 +103,7 @@ public class OptionControllerTest {
 
         // when
         var response = restClient.get()
-            .uri("/{productId}/options", 1)
+            .uri("/{productId}/options", mockProduct.getId())
             .retrieve()
             .toEntity(new ParameterizedTypeReference<List<OptionResponse>>() {
             });
@@ -119,7 +119,7 @@ public class OptionControllerTest {
             assertThat(optionResponse.id()).isNotNull();
             assertThat(optionResponse.name()).isEqualTo(list.get(i).name());
             assertThat(optionResponse.quantity()).isEqualTo(list.get(i).quantity());
-            assertThat(optionResponse.productId()).isEqualTo(1L);
+            assertThat(optionResponse.productId()).isEqualTo(mockProduct.getId());
         }
     }
 
@@ -127,16 +127,18 @@ public class OptionControllerTest {
     void 옵션_이름_변경_테스트() {
         // given
         OptionAddRequest optionAddRequest = new OptionAddRequest("수정 전", 100L);
-        restClient.post()
-            .uri("/{productId}/options", 1)
+        var id = restClient.post()
+            .uri("/{productId}/options", mockProduct.getId())
             .body(optionAddRequest)
             .retrieve()
-            .toEntity(OptionResponse.class);
+            .toEntity(OptionResponse.class)
+            .getBody()
+            .id();
 
         // when
         OptionUpdateRequest optionUpdateRequest = new OptionUpdateRequest("수정 후");
         var response = restClient.patch()
-            .uri("/{productId}/options/{optionId}", 1, 1)
+            .uri("/{productId}/options/{optionId}", mockProduct.getId(), id)
             .body(optionUpdateRequest)
             .retrieve()
             .toEntity(OptionResponse.class);
@@ -145,10 +147,9 @@ public class OptionControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         OptionResponse optionResponse = response.getBody();
         assertThat(optionResponse).isNotNull();
-        assertThat(optionResponse.id()).isEqualTo(1L);
         assertThat(optionResponse.name()).isEqualTo("수정 후");
         assertThat(optionResponse.quantity()).isEqualTo(100L);
-        assertThat(optionResponse.productId()).isEqualTo(1L);
+        assertThat(optionResponse.productId()).isEqualTo(mockProduct.getId());
     }
 
     @Test
@@ -160,13 +161,13 @@ public class OptionControllerTest {
         requests.add(new OptionAddRequest("옵션3", 300L));
         for (OptionAddRequest request : requests) {
             restClient.post()
-                .uri("/{productId}/options", 1)
+                .uri("/{productId}/options", mockProduct.getId())
                 .body(request)
                 .retrieve()
                 .toEntity(OptionResponse.class);
         }
         var beforeResponse = restClient.get()
-            .uri("/{productId}/options", 1)
+            .uri("/{productId}/options", mockProduct.getId())
             .retrieve()
             .toEntity(new ParameterizedTypeReference<List<OptionResponse>>() {
             });
@@ -174,7 +175,7 @@ public class OptionControllerTest {
 
         // when
         var response = restClient.delete()
-            .uri("/{productId}/options/{optionId}", 1, 2)
+            .uri("/{productId}/options/{optionId}", mockProduct.getId(), 2)
             .retrieve()
             .toEntity(String.class);
 
@@ -182,7 +183,7 @@ public class OptionControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("옵션 삭제가 완료되었습니다.");
         int afterSize = restClient.get()
-            .uri("/{productId}/options", 1)
+            .uri("/{productId}/options", mockProduct.getId())
             .retrieve()
             .toEntity(new ParameterizedTypeReference<List<OptionResponse>>() {
             })
@@ -200,7 +201,7 @@ public class OptionControllerTest {
         assertThatExceptionOfType(HttpClientErrorException.BadRequest.class)
             .isThrownBy(() ->
                 restClient.post()
-                    .uri("/{productId}/options", 1)
+                    .uri("/{productId}/options", mockProduct.getId())
                     .body(optionAddRequest)
                     .retrieve()
                     .toEntity(ErrorResult.class)
@@ -219,7 +220,7 @@ public class OptionControllerTest {
         assertThatExceptionOfType(HttpClientErrorException.BadRequest.class)
             .isThrownBy(() ->
                 restClient.post()
-                    .uri("/{productId}/options", 1)
+                    .uri("/{productId}/options", mockProduct.getId())
                     .body(optionAddRequest)
                     .retrieve()
                     .toEntity(ErrorResult.class)
@@ -235,7 +236,7 @@ public class OptionControllerTest {
             100L
         );
         restClient.post()
-            .uri("/{productId}/options", 1)
+            .uri("/{productId}/options", mockProduct.getId())
             .body(optionAddRequest)
             .retrieve()
             .toEntity(OptionResponse.class);
@@ -243,7 +244,7 @@ public class OptionControllerTest {
         assertThatExceptionOfType(HttpClientErrorException.Forbidden.class)
             .isThrownBy(() ->
                 restClient.delete()
-                    .uri("/{productId}/options/{optionId}", 1, 1)
+                    .uri("/{productId}/options/{optionId}", mockProduct.getId(), 1)
                     .retrieve()
                     .toEntity(ErrorResult.class)
             )

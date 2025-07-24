@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -70,7 +72,6 @@ public class MemberControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         JwtResponse jwtResponse = response.getBody();
         assertThat(jwtResponse).isNotNull();
-        assertThat(jwtResponse.id()).isEqualTo(1L);
     }
 
     @Test
@@ -93,7 +94,6 @@ public class MemberControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JwtResponse jwtResponse = response.getBody();
         assertThat(jwtResponse).isNotNull();
-        assertThat(jwtResponse.id()).isEqualTo(1L);
     }
 
     @Test
@@ -122,7 +122,6 @@ public class MemberControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         MemberResponse memberResponse = response.getBody();
         assertThat(memberResponse).isNotNull();
-        assertThat(memberResponse.id()).isEqualTo(1L);
         assertThat(memberResponse.email()).isEqualTo("test@gmail.com");
         assertThat(memberResponse.userRole()).isEqualTo(UserRole.NORMAL);
     }

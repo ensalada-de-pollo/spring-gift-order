@@ -66,7 +66,7 @@ public class WishlistRepositoryTest {
         wishlistRepository.save(wish);
 
         Wishlist savedWish =
-            wishlistRepository.findByMemberIdAndProductId(1L, 1L).get();
+            wishlistRepository.findByMemberIdAndProductId(member.getId(), product.getId()).get();
 
         assertAll(
             () -> assertThat(savedWish.getId()).isNotNull(),
@@ -95,9 +95,9 @@ public class WishlistRepositoryTest {
     @Test
     void 위시_id로_멤버의_id를_조회() {
         Wishlist wish = new Wishlist(product, member);
-        wishlistRepository.save(wish);
+        Wishlist savedWish = wishlistRepository.save(wish);
 
-        Long id = wishlistRepository.getMemberIdById(1L);
+        Long id = wishlistRepository.getMemberIdById(savedWish.getId());
 
         assertThat(id).isEqualTo(wish.getMember().getId());
     }
@@ -109,11 +109,11 @@ public class WishlistRepositoryTest {
         assertThat(savedWish.getId()).isNotNull();
 
         wishlistRepository.deleteByIdAndMemberId(
-            1L,
+            savedWish.getId(),
             wish.getMember().getId()
         );
 
-        Optional<Wishlist> deletedWish = wishlistRepository.findById(1L);
+        Optional<Wishlist> deletedWish = wishlistRepository.findById(savedWish.getId());
 
         assertThat(deletedWish).isEmpty();
     }
@@ -126,7 +126,7 @@ public class WishlistRepositoryTest {
 
         wishlistRepository.deleteByProductId(wish.getProduct().getId());
 
-        Optional<Wishlist> deletedWish = wishlistRepository.findById(1L);
+        Optional<Wishlist> deletedWish = wishlistRepository.findById(savedWish.getId());
 
         assertThat(deletedWish).isEmpty();
     }

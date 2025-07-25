@@ -1,5 +1,5 @@
 package gift.oauth.dto;
 
-public record KakaoLoginRequest(String authorizationCode) {
+public record KakaoLoginRequest(String code) {
 
 }

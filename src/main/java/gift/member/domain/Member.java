@@ -21,7 +21,6 @@ public class Member {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -32,6 +31,10 @@ public class Member {
 
     }
 
+    public Member(String email) {
+        this(email, null, UserRole.NORMAL);
+    }
+  
     public Member(String email, String password, UserRole userRole) {
         this.email = email;
         this.password = password;

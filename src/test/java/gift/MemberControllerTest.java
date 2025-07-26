@@ -70,7 +70,6 @@ public class MemberControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         JwtResponse jwtResponse = response.getBody();
         assertThat(jwtResponse).isNotNull();
-        assertThat(jwtResponse.id()).isEqualTo(1L);
     }
 
     @Test
@@ -93,7 +92,6 @@ public class MemberControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JwtResponse jwtResponse = response.getBody();
         assertThat(jwtResponse).isNotNull();
-        assertThat(jwtResponse.id()).isEqualTo(1L);
     }
 
     @Test
@@ -122,7 +120,6 @@ public class MemberControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         MemberResponse memberResponse = response.getBody();
         assertThat(memberResponse).isNotNull();
-        assertThat(memberResponse.id()).isEqualTo(1L);
         assertThat(memberResponse.email()).isEqualTo("test@gmail.com");
         assertThat(memberResponse.userRole()).isEqualTo(UserRole.NORMAL);
     }

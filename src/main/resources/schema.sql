@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS option CASCADE;
 DROP TABLE IF EXISTS wishlist CASCADE;
 DROP TABLE IF EXISTS product CASCADE;
@@ -32,3 +33,13 @@ CREATE TABLE option (
     quantity BIGINT NOT NULL,
     FOREIGN KEY (product_id) REFERENCES product(id)
 );
+
+CREATE TABLE orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    option_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL,
+    quantity BIGINT NOT NULL,
+    message VARCHAR(255) NOT NULL,
+    FOREIGN KEY (option_id) REFERENCES option(id),
+    FOREIGN KEY (member_id) REFERENCES member(id)
+)

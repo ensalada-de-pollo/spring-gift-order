@@ -3,6 +3,7 @@ package gift.oauth;
 import gift.jwt.JwtResponse;
 import gift.jwt.JwtUtil;
 import gift.member.domain.Member;
+import gift.member.domain.enums.Oauth;
 import gift.member.repository.MemberRepository;
 import gift.oauth.dto.KakaoLoginRequest;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,12 @@ public class KakaoAuthService {
 
         Member member = memberRepository.findByEmail(email)
             .orElseGet(() -> register(email, kakaoAccessToken));
+
+        if (member.getOauth().equals(Oauth.NONE)) {
+            member.switchToKakao();
+            member.saveAccessToken(kakaoAccessToken);
+            memberRepository.save(member);
+        }
 
         String accessToken = jwtUtil.createAccessToken(member);
 

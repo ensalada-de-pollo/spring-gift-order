@@ -1,4 +1,4 @@
-package gift.oauth;
+package gift.common.property;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -8,7 +8,8 @@ public record KakaoProperties(
     String redirectUri,
     String requestTokenUri,
     String requestUserInfoUri,
-    String kakaoAuthorizeUri
+    String kakaoAuthorizeUri,
+    String requestMessageToMeUri
 ) {
 
 }

@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders")
@@ -27,6 +28,8 @@ public class Order {
 
     private String message;
 
+    private LocalDateTime orderDateTime;
+
     protected Order() {
 
     }
@@ -36,6 +39,7 @@ public class Order {
         this.optionId = optionId;
         this.memberId = memberId;
         this.message = message;
+        this.orderDateTime = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -56,5 +60,9 @@ public class Order {
 
     public String getMessage() {
         return message;
+    }
+
+    public LocalDateTime getOrderDateTime() {
+        return orderDateTime;
     }
 }

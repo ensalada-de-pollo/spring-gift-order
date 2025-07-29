@@ -39,7 +39,8 @@ CREATE TABLE orders (
     option_id BIGINT NOT NULL,
     member_id BIGINT NOT NULL,
     quantity BIGINT NOT NULL,
-    message VARCHAR(255) NOT NULL,
+    message VARCHAR(255),
+    order_date_time TIMESTAMP NOT NULL,
     FOREIGN KEY (option_id) REFERENCES option(id),
     FOREIGN KEY (member_id) REFERENCES member(id)
 )

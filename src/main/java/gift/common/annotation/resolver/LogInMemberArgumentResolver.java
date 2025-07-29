@@ -39,6 +39,6 @@ public class LogInMemberArgumentResolver implements HandlerMethodArgumentResolve
             throw new NullTokenException("토큰 정보가 없습니다.");
         }
 
-        return memberService.getIdFromToken(resolvedToken);
+        return memberService.getMemberFromToken(resolvedToken);
     }
 }

@@ -30,7 +30,7 @@ public class KakaoAuthService {
         String email = kakaoOauthClient.extractEmailFromResponse(kakaoAccessToken);
 
         Member member = memberRepository.findByEmail(email)
-            .orElseGet(() -> register(email));
+            .orElseGet(() -> register(email, kakaoAccessToken));
 
         String accessToken = jwtUtil.createAccessToken(member);
 
@@ -40,8 +40,8 @@ public class KakaoAuthService {
         );
     }
 
-    private Member register(String email) {
-        Member member = new Member(email);
+    private Member register(String email, String kakaoAccessToken) {
+        Member member = new Member(email, kakaoAccessToken);
 
         return memberRepository.save(member);
     }

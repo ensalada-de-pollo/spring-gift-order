@@ -1,6 +1,7 @@
 package gift.oauth;
 
 import gift.common.exceptions.LogInFailedException;
+import gift.common.property.KakaoProperties;
 import gift.jwt.JwtResponse;
 import gift.oauth.dto.KakaoLoginRequest;
 import jakarta.servlet.http.Cookie;

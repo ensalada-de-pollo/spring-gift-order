@@ -3,6 +3,7 @@ package gift.oauth;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gift.common.exceptions.LogInFailedException;
+import gift.common.property.KakaoProperties;
 import gift.oauth.dto.KakaoLoginResponse;
 import java.util.Map;
 import org.slf4j.Logger;

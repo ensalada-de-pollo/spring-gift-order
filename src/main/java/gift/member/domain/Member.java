@@ -23,6 +23,8 @@ public class Member {
 
     private String password;
 
+    private String accessToken;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
     private UserRole userRole;
@@ -31,10 +33,12 @@ public class Member {
 
     }
 
-    public Member(String email) {
-        this(email, null, UserRole.NORMAL);
+    public Member(String email, String accessToken) {
+        this.email = email;
+        this.accessToken = accessToken;
+        this.userRole = UserRole.NORMAL;
     }
-  
+
     public Member(String email, String password, UserRole userRole) {
         this.email = email;
         this.password = password;

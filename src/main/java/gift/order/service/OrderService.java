@@ -43,17 +43,6 @@ public class OrderService {
             )
         );
 
-        return convertToDTO(order);
-    }
-
-    private OrderResponse convertToDTO(Order order) {
-        return new OrderResponse(
-            order.getId(),
-            order.getOptionId(),
-            order.getMemberId(),
-            order.getQuantity(),
-            order.getMessage(),
-            order.getOrderDateTime()
-        );
+        return new OrderResponse(order);
     }
 }

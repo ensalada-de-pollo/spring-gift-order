@@ -30,6 +30,8 @@ public class Member {
     @Column(length = 10, nullable = false)
     private UserRole userRole;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10, nullable = false)
     private Oauth oauth;
 
     protected Member() {

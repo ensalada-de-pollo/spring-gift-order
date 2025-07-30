@@ -87,7 +87,7 @@ public class WishlistService {
         wishlistRepository.deleteByProductId(event.id());
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleOrderCreateEvent(OrderCreateEvent event) {
         wishlistRepository.deleteByProductIdAndMemberId(
             event.getProduct().getId(),

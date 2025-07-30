@@ -18,6 +18,8 @@ import java.util.Optional;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Service
 public class OptionService {
@@ -104,7 +106,7 @@ public class OptionService {
         optionRepository.deleteByProductId(event.id());
     }
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public synchronized void handleOrderCreateEvent(OrderCreateEvent event) {
         Option option = optionRepository.findById(event.getOptionId())
             .orElseThrow(() -> new FailedToFindException("해당 옵션이 존재하지 않습니다."));

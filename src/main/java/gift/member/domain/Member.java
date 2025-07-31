@@ -83,4 +83,8 @@ public class Member {
     public void saveAccessToken(String accessToken) {
         this.accessToken = accessToken;
     }
+
+    public boolean validateToken() {
+        return accessToken != null;
+    }
 }

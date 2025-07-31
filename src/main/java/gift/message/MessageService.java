@@ -30,12 +30,10 @@ public class MessageService {
                 "주문이 완료되었지만, 카카오 회원이 아니므로 메세지를 전송할 수 없습니다.");
         }
 
-        String kakaoAccessToken;
-
-        if ((kakaoAccessToken = event.getMember().getAccessToken()) == null) {
+        if (!event.validateToken()) {
             throw new FailedToSendMessageException("유효하지 않은 카카오 토큰입니다.");
         }
 
-        kakaoMessageClient.sendMessage(orderMessageRequest, kakaoAccessToken);
+        kakaoMessageClient.sendMessage(orderMessageRequest, event.getToken());
     }
 }

@@ -60,4 +60,12 @@ public class OrderCreateEvent {
     public boolean isOauthNone() {
         return member.getOauth() == Oauth.NONE;
     }
+
+    public boolean validateToken() {
+        return member.validateToken();
+    }
+
+    public String getToken() {
+        return member.getAccessToken();
+    }
 }

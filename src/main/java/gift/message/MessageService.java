@@ -2,7 +2,6 @@ package gift.message;
 
 import gift.common.event.OrderCreateEvent;
 import gift.common.exceptions.FailedToSendMessageException;
-import gift.member.domain.enums.Oauth;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -26,7 +25,7 @@ public class MessageService {
                 event.getMessage()
             );
 
-        if (event.getMember().getOauth().equals(Oauth.NONE)) {
+        if (event.isOauthNone()) {
             throw new FailedToSendMessageException(
                 "주문이 완료되었지만, 카카오 회원이 아니므로 메세지를 전송할 수 없습니다.");
         }

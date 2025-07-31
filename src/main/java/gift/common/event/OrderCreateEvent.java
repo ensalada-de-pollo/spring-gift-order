@@ -1,6 +1,7 @@
 package gift.common.event;
 
 import gift.member.domain.Member;
+import gift.member.domain.enums.Oauth;
 import gift.product.domain.Product;
 
 public class OrderCreateEvent {
@@ -54,5 +55,9 @@ public class OrderCreateEvent {
 
     public String getMessage() {
         return message;
+    }
+
+    public boolean isOauthNone() {
+        return member.getOauth() == Oauth.NONE;
     }
 }

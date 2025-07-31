@@ -1,11 +1,13 @@
 package gift.common;
 
+import gift.common.exceptions.AlreadyExistsException;
 import gift.common.exceptions.FailedToDeleteException;
 import gift.common.exceptions.FailedToFindException;
+import gift.common.exceptions.FailedToSendMessageException;
 import gift.common.exceptions.JwtValidationException;
 import gift.common.exceptions.LogInFailedException;
-import gift.common.exceptions.AlreadyExistsException;
 import gift.common.exceptions.NullTokenException;
+import gift.common.exceptions.OutOfStockException;
 import java.util.stream.Collectors;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -137,6 +139,32 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
             ),
             HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(value = OutOfStockException.class)
+    public ResponseEntity<ErrorResult> handleOutOfStockException(
+        OutOfStockException ex) {
+        return new ResponseEntity<>(
+            new ErrorResult(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+            ),
+            HttpStatus.CONFLICT
+        );
+    }
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = FailedToSendMessageException.class)
+    public ResponseEntity<ErrorResult> handleFailedToSendMessageException(
+        FailedToSendMessageException ex) {
+        return new ResponseEntity<>(
+            new ErrorResult(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ex.getMessage()
+            ),
+            HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
 }

@@ -3,9 +3,11 @@ package gift.oauth;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gift.common.exceptions.LogInFailedException;
+import gift.common.property.KakaoProperties;
 import gift.oauth.dto.KakaoLoginResponse;
 import java.util.Map;
-import org.springframework.core.ParameterizedTypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -23,6 +25,7 @@ public class KakaoOauthClient {
     private final RestTemplate restTemplate;
     private final KakaoProperties kakaoProperties;
     private final ObjectMapper objectMapper;
+    private final Logger log = LoggerFactory.getLogger(KakaoOauthClient.class);
 
     public KakaoOauthClient(
         RestTemplate restTemplate,
@@ -45,36 +48,23 @@ public class KakaoOauthClient {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
-        try {
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                kakaoProperties.requestTokenUri(),
-                HttpMethod.POST,
-                request,
-                new ParameterizedTypeReference<>() {
-                }
-            );
+        Map response = requestApi(
+            kakaoProperties.requestTokenUri(),
+            HttpMethod.POST,
+            request,
+            Map.class
+        );
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                String accessToken;
+        String accessToken;
 
-                if (response.getBody() != null
-                    && (accessToken = response.getBody().get("access_token").toString()) != null) {
-                    return accessToken;
-                } else {
-                    throw new LogInFailedException("카카오 로그인 응답에서 토큰을 찾을 수 없습니다.");
-                }
-
-            } else {
-                throw new LogInFailedException("카카오 로그인 요청에 실패하였습니다. " + response.getStatusCode());
-            }
-        } catch (RestClientException e) {
-            throw new LogInFailedException("카카오 로그인 중 REST 요청 오류가 발생했습니다.");
-        } catch (Exception e) {
-            throw new LogInFailedException("카카오 로그인 중 예상치 못한 오류가 발생했습니다.");
+        if ((accessToken = response.get("access_token").toString()) != null) {
+            return accessToken;
+        } else {
+            throw new LogInFailedException("카카오 로그인 응답에서 토큰을 찾을 수 없습니다.");
         }
     }
 
-    protected String getUserEmail(String kakaoAccessToken) {
+    protected String extractEmailFromResponse(String kakaoAccessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         headers.add("Authorization", "Bearer " + kakaoAccessToken);
@@ -82,29 +72,55 @@ public class KakaoOauthClient {
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                kakaoProperties.requestUserInfoUri(),
-                HttpMethod.GET,
-                request,
-                String.class
+            KakaoLoginResponse kakaoLoginResponse = objectMapper.readValue(
+                requestApi(
+                    kakaoProperties.requestUserInfoUri(),
+                    HttpMethod.GET,
+                    request,
+                    String.class
+                ),
+                KakaoLoginResponse.class
             );
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                KakaoLoginResponse kakaoLoginResponse = objectMapper.readValue(response.getBody(),
-                    KakaoLoginResponse.class);
+            String email;
 
-                String email;
+            if ((email = kakaoLoginResponse.kakaoAccount().email()) == null) {
+                throw new LogInFailedException("카카오 계정 이메일 정보를 찾을 수 없습니다.");
+            }
 
-                if ((email = kakaoLoginResponse.kakaoAccount().email()) == null) {
-                    throw new LogInFailedException("카카오 계정 이메일 정보를 찾을 수 없습니다.");
-                }
+            return email;
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage());
+            throw new LogInFailedException("카카오 로그인 응답 처리 중 오류가 발생했습니다.");
+        }
+    }
 
-                return email;
-            } else {
+    private <T> T requestApi(
+        String uri,
+        HttpMethod method,
+        HttpEntity<?> request,
+        Class<T> responseType
+    ) {
+        try {
+            ResponseEntity<T> response = restTemplate.exchange(
+                uri,
+                method,
+                request,
+                responseType
+            );
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.warn(response.toString());
                 throw new LogInFailedException("카카오 로그인 요청에 실패하였습니다. " + response.getStatusCode());
             }
-        } catch (JsonProcessingException e) {
-            throw new LogInFailedException("카카오 로그인 응답 처리 중 오류가 발생했습니다.");
+
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error(e.getMessage());
+            throw new LogInFailedException("카카오 로그인 중 REST 요청 오류가 발생했습니다.");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new LogInFailedException("카카오 로그인 중 예상치 못한 오류가 발생했습니다.");
         }
     }
 }

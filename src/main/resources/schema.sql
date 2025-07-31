@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS option CASCADE;
 DROP TABLE IF EXISTS wishlist CASCADE;
 DROP TABLE IF EXISTS product CASCADE;
@@ -14,7 +15,9 @@ CREATE TABLE member (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255),
-    user_role VARCHAR(10) NOT NULL
+    access_token VARCHAR(255),
+    user_role VARCHAR(10) NOT NULL,
+    oauth VARCHAR(10) NOT NULL
 );
 
 CREATE TABLE wishlist (
@@ -32,3 +35,14 @@ CREATE TABLE option (
     quantity BIGINT NOT NULL,
     FOREIGN KEY (product_id) REFERENCES product(id)
 );
+
+CREATE TABLE orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    option_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL,
+    quantity BIGINT NOT NULL,
+    message VARCHAR(255),
+    order_date_time TIMESTAMP NOT NULL,
+    FOREIGN KEY (option_id) REFERENCES option(id),
+    FOREIGN KEY (member_id) REFERENCES member(id)
+)

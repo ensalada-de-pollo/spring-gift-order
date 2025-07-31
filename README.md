@@ -79,31 +79,47 @@ ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
 ```java
 String url = "https://kapi.kakao.com/v2/user/me";
 HttpHeaders headers = new HttpHeaders();
-headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
-headers.add("Authorization", "Bearer " + kakaoAccessToken);
+headers.
+
+add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+headers.
+
+add("Authorization","Bearer "+kakaoAccessToken);
 
 HttpEntity<Void> request = new HttpEntity<>(headers);
 
-try {
-    ResponseEntity<String> response = restTemplate.exchange(
-        url,
-        HttpMethod.GET,
-        request,
-        String.class
-    );
+try{
+ResponseEntity<String> response = restTemplate.exchange(
+    url,
+    HttpMethod.GET,
+    request,
+    String.class
+);
 
-    if (response.getStatusCode().is2xxSuccessful()) {
-        KakaoLoginResponse kakaoLoginResponse = objectMapper.readValue(response.getBody(),
-            KakaoLoginResponse.class);
+    if(response.
 
-        String email;
+getStatusCode().
 
-        if ((email = kakaoLoginResponse.kakaoAccount().email()) == null) {
-            throw new LogInFailedException("카카오 계정 이메일 정보를 찾을 수 없습니다.");
+is2xxSuccessful()){
+KakaoLoginResponse kakaoLoginResponse = objectMapper.readValue(response.getBody(),
+    KakaoLoginResponse.class);
+
+String email;
+
+        if((email =kakaoLoginResponse.
+
+kakaoAccount().
+
+email())==null){
+    throw new
+
+LogInFailedException("카카오 계정 이메일 정보를 찾을 수 없습니다.");
         }
 ```
 
-사용자의 이메일을 가져오는 메서드입니다. 토큰을 발급받는 메서드로부터 얻은 토큰을 활용하여 GET 요청을 보냅니다. [사용자 정보를 가져오는 API](https://developers.kakao.com/tool/rest-api/open/get/v2-user-me)를 참고하여 해당 코드를 작성할 수 있었습니다.
+사용자의 이메일을 가져오는 메서드입니다. 토큰을 발급받는 메서드로부터 얻은 토큰을 활용하여 GET 요청을
+보냅니다. [사용자 정보를 가져오는 API](https://developers.kakao.com/tool/rest-api/open/get/v2-user-me)를 참고하여 해당
+코드를 작성할 수 있었습니다.
 
 사용자는 이메일 정보 제공에 동의하게 되고, 응답은 이메일을 포함시켜 전달하고, 메서드는 이를 토대로 얻은 이메일을 반환합니다.
 
@@ -116,7 +132,9 @@ Member member = memberRepository.findByEmail(email)
 
 String accessToken = jwtUtil.createAccessToken(member);
 
-return new JwtResponse(
+return new
+
+JwtResponse(
     accessToken,
     member.getId()
 );
@@ -124,8 +142,96 @@ return new JwtResponse(
 
 위 두 개의 메서드를 호출하여 얻은 사용자의 이메일로 가입 여부를 조회합니다.
 
-가입되어있지 않은 회원이라면 DB에 이메일을 저장하여 회원가입을 하도록 작성했습니다. 이 때 회원가입은 로직을 간소화하여 단순하게 repository의 save 메서드를 호출하는 것으로 하였습니다.
+가입되어있지 않은 회원이라면 DB에 이메일을 저장하여 회원가입을 하도록 작성했습니다. 이 때 회원가입은 로직을 간소화하여 단순하게 repository의 save 메서드를 호출하는
+것으로 하였습니다.
 
 이를 토대로 얻은 회원 정보로 토큰을 생성하고, jwt를 포함한 응답을 반환합니다.
 
-카카오로 로그인을 하여 회원가입을 하는 회원은 비밀번호가 필요없기 때문에, 비밀번호는 null로 두었고, db schema도 password의 not null 제약조건을 삭제하였습니다.
+카카오로 로그인을 하여 회원가입을 하는 회원은 비밀번호가 필요없기 때문에, 비밀번호는 null로 두었고, db schema도 password의 not null 제약조건을
+삭제하였습니다.
+
+### STEP2
+
+- `application-test.properties` 파일을 추가하여 `./gradlew build` 시 jwt.secret이 누락됨에 따라 발생하는 오류를 해결하였습니다.
+- KakaoOauthClient의 두 메서드를 리팩토링하였습니다.
+    - 두 메서드에서 RestTemplate을 호출하여 요청을 전송하는 부분이 중복되어  `requestApi` 메서드를 추가함으로써 공통된 부분을 메서드화 하였습니다.
+    - 조건문을 수정하여 코드를 보다 간결하게 보이도록 하였습니다.
+- KakaoAuthService 메서드의 `@Transcational` 옵션을 수정하였습니다.
+- Kakao 로그인 후 accessToken을 전달하는 방식을 기존 parameter 방식에서 cookie 방식으로 변경하였습니다.
+
+#### 주문하기 구현 내용
+
+새로운 기능을 구현함에 따라 `Order` 테이블을 생성하였습니다.
+
+```java
+eventPublisher.publishEvent(  
+    new OrderCreateEvent(
+        orderRequest.optionId(),  
+        orderRequest.quantity(),
+        member,
+        orderRequest.message()  
+    ));
+```
+
+서비스에서는 저장을 하기 전 이벤트를 발행합니다. 주문을 수행하면서 관련된 테이블 `Option`, `Wishlist` 등의 작업을 수행하기 위함입니다.
+
+```java
+
+@EventListener
+public synchronized void handleOrderCreateEvent(OrderCreateEvent event) {
+    Option option = optionRepository.findById(event.getOptionId())
+        .orElseThrow(() -> new FailedToFindException("해당 옵션이 존재하지 않습니다."));
+
+    if (option.getQuantity() < event.getQuantity()) {
+        throw new OutOfStockException("주문할 수 있는 수량을 초과하였습니다.");
+    }
+
+    option.subQuantity(event.getQuantity());
+
+    optionRepository.save(option);
+
+    event.addOptionName(option.getName());
+    event.addProductId(option.getProduct());
+}
+```
+
+option Service에서는 `@EventListener`로 발행된 이벤트를 받아 정상적으로 수행할 수 있는 주문인지 확인하는 역할을 합니다.
+싱글스레드 내지 멀티스레드까지를 가정하고, `synchronized` 키워드를 붙여 동시성 문제를 해결해보려고 하였습니다.
+
+```java
+
+@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+public void handleOrderCreateEvent(OrderCreateEvent event) {
+    wishlistRepository.deleteByProductIdAndMemberId(
+        event.getProduct().getId(),
+        event.getMember().getId()
+    );
+}
+```
+
+wishlist Service에서는 주문하기를 완료하면서 `@TransactionalEventListener` 로 발행된 이벤트를 받아 wishlist에 저장된 위시 목록을
+삭제하도록 하였습니다.
+
+```java
+
+@TransactionalEventListener
+public void handleOrderCreateEvent(OrderCreateEvent event) {
+```
+
+Message Service에서는 주문하기를 완료하고 발행된 이벤트를 받아서 메세지를 전송하도록 하였습니다.
+메세지를 전송하는 과정이 주문하기라는 과정에 크게 영향을 미치지 않게 하도록 위해 `AFTER_COMMIT` 으로 메세지가 전송되도록 하였습니다.
+
+```java
+if (event.getMember().getOauth().equals(Oauth.NONE)) {  
+    throw new FailedToSendMessageException(  
+        "주문이 완료되었지만, 카카오 회원이 아니므로 메세지를 전송할 수 없습니다.");  
+}  
+  
+String kakaoAccessToken;  
+  
+if ((kakaoAccessToken = event.getMember().getAccessToken()) == null) {  
+    throw new FailedToSendMessageException("유효하지 않은 카카오 토큰입니다.");  
+}
+```
+
+이 때, 카카오 회원이 아니거나 accessToken이 존재하지 않는 경우 예외가 발생하도록 하였습니다.

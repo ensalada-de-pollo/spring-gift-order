@@ -1,6 +1,7 @@
 package gift.wishlist.controller;
 
 import gift.common.annotation.LogInMember;
+import gift.member.domain.Member;
 import gift.wishlist.dto.WishAddRequest;
 import gift.wishlist.dto.WishResponse;
 import gift.wishlist.service.WishlistService;
@@ -28,22 +29,22 @@ public class WishlistController {
     @PostMapping
     public ResponseEntity<WishResponse> addWish(
         @RequestBody WishAddRequest wishAddRequest,
-        @LogInMember Long memberId) {
+        @LogInMember Member member) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(wishlistService.addWish(wishAddRequest, memberId));
+            .body(wishlistService.addWish(wishAddRequest, member));
     }
 
     @GetMapping
     public ResponseEntity<List<WishResponse>> findAll(
-        @LogInMember Long memberId) {
-        return ResponseEntity.ok(wishlistService.getWishes(memberId));
+        @LogInMember Member member) {
+        return ResponseEntity.ok(wishlistService.getWishes(member));
     }
 
     @DeleteMapping("/{wishId}")
     public ResponseEntity<String> deleteWish(
         @PathVariable Long wishId,
-        @LogInMember Long memberId) {
-        wishlistService.delete(wishId, memberId);
+        @LogInMember Member member) {
+        wishlistService.delete(wishId, member);
 
         return ResponseEntity.ok("위시리스트 삭제가 완료되었습니다.");
     }

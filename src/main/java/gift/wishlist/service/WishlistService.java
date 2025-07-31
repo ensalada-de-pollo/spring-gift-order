@@ -1,11 +1,11 @@
 package gift.wishlist.service;
 
+import gift.common.event.OrderCreateEvent;
 import gift.common.event.ProductDeleteEvent;
 import gift.common.exceptions.AlreadyExistsException;
 import gift.common.exceptions.FailedToDeleteException;
 import gift.common.exceptions.FailedToFindException;
 import gift.member.domain.Member;
-import gift.member.repository.MemberRepository;
 import gift.product.domain.Product;
 import gift.product.repository.ProductRepository;
 import gift.wishlist.domain.Wishlist;
@@ -16,32 +16,31 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Service
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
     private final ProductRepository productRepository;
-    private final MemberRepository memberRepository;
 
     public WishlistService(
         WishlistRepository wishlistRepository,
-        ProductRepository productRepository,
-        MemberRepository memberRepository
+        ProductRepository productRepository
     ) {
         this.wishlistRepository = wishlistRepository;
         this.productRepository = productRepository;
-        this.memberRepository = memberRepository;
     }
 
     @Transactional
-    public WishResponse addWish(WishAddRequest wishAddRequest, Long memberId) {
+    public WishResponse addWish(WishAddRequest wishAddRequest, Member member) {
         Long productId = wishAddRequest.productId();
 
         Optional<Wishlist> wishlist =
             wishlistRepository.findByMemberIdAndProductId(
-                memberId,
+                member.getId(),
                 productId
             );
 
@@ -52,10 +51,6 @@ public class WishlistService {
         Product product =
             productRepository.findById(productId)
                 .orElseThrow(() -> new FailedToFindException("존재하지 않는 상품입니다."));
-
-        Member member =
-            memberRepository.findById(memberId)
-                .orElseThrow(() -> new FailedToFindException("존재하지 않는 회원입니다."));
 
         return convertToDTO(
             wishlistRepository.save(
@@ -68,28 +63,37 @@ public class WishlistService {
     }
 
     @Transactional(readOnly = true)
-    public List<WishResponse> getWishes(Long memberId) {
-        return wishlistRepository.findByMemberId(memberId)
+    public List<WishResponse> getWishes(Member member) {
+        return wishlistRepository.findByMemberId(member.getId())
             .stream()
             .map(this::convertToDTO)
             .toList();
     }
 
     @Transactional
-    public void delete(Long wishId, Long memberId) {
+    public void delete(Long wishId, Member member) {
         Long id = wishlistRepository.getMemberIdById(wishId);
 
-        if (!id.equals(memberId)) {
+        if (!id.equals(member.getId())) {
             throw new FailedToDeleteException("삭제 권한이 없습니다.");
         }
 
-        wishlistRepository.deleteByIdAndMemberId(wishId, memberId);
+        wishlistRepository.deleteByIdAndMemberId(wishId, member.getId());
     }
 
     @EventListener
     @Transactional
-    public void handleDeleteEvent(ProductDeleteEvent event) {
+    public void handleProductDeleteEvent(ProductDeleteEvent event) {
         wishlistRepository.deleteByProductId(event.id());
+    }
+
+    @TransactionalEventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleOrderCreateEvent(OrderCreateEvent event) {
+        wishlistRepository.deleteByProductIdAndMemberId(
+            event.getProduct().getId(),
+            event.getMember().getId()
+        );
     }
 
     private WishResponse convertToDTO(Wishlist wishlist) {

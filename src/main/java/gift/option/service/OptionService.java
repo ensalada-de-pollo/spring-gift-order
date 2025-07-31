@@ -1,9 +1,11 @@
 package gift.option.service;
 
+import gift.common.event.OrderCreateEvent;
 import gift.common.event.ProductDeleteEvent;
 import gift.common.exceptions.AlreadyExistsException;
 import gift.common.exceptions.FailedToDeleteException;
 import gift.common.exceptions.FailedToFindException;
+import gift.common.exceptions.OutOfStockException;
 import gift.option.domain.Option;
 import gift.option.dto.OptionAddRequest;
 import gift.option.dto.OptionResponse;
@@ -16,6 +18,8 @@ import java.util.Optional;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Service
 public class OptionService {
@@ -100,6 +104,23 @@ public class OptionService {
     @Transactional
     public void handleDeleteEvent(ProductDeleteEvent event) {
         optionRepository.deleteByProductId(event.id());
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public synchronized void handleOrderCreateEvent(OrderCreateEvent event) {
+        Option option = optionRepository.findById(event.getOptionId())
+            .orElseThrow(() -> new FailedToFindException("해당 옵션이 존재하지 않습니다."));
+
+        if (option.getQuantity() < event.getQuantity()) {
+            throw new OutOfStockException("주문할 수 있는 수량을 초과하였습니다.");
+        }
+
+        option.subQuantity(event.getQuantity());
+
+        optionRepository.save(option);
+
+        event.addOptionName(option.getName());
+        event.addProductId(option.getProduct());
     }
 
     private Product findProduct(Long productId) {

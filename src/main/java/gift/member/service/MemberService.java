@@ -96,8 +96,11 @@ public class MemberService {
         );
     }
 
-    public Long getIdFromToken(String token) {
-        return jwtUtil.getIdFromToken(token);
+    public Member getMemberFromToken(String token) {
+        Long id = jwtUtil.getIdFromToken(token);
+
+        return memberRepository.findById(id)
+            .orElseThrow(() -> new FailedToFindException("존재하지 않는 회원입니다."));
     }
 
     private MemberResponse convertToDTO(Member member) {

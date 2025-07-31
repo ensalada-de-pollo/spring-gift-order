@@ -1,5 +1,6 @@
 package gift.member.domain;
 
+import gift.member.domain.enums.Oauth;
 import gift.member.domain.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,22 +24,32 @@ public class Member {
 
     private String password;
 
+    private String accessToken;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 10, nullable = false)
     private UserRole userRole;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10, nullable = false)
+    private Oauth oauth;
 
     protected Member() {
 
     }
 
-    public Member(String email) {
-        this(email, null, UserRole.NORMAL);
+    public Member(String email, String accessToken) {
+        this.email = email;
+        this.accessToken = accessToken;
+        this.userRole = UserRole.NORMAL;
+        this.oauth = Oauth.KAKAO;
     }
-  
+
     public Member(String email, String password, UserRole userRole) {
         this.email = email;
         this.password = password;
         this.userRole = userRole;
+        this.oauth = Oauth.NONE;
     }
 
     public Long getId() {
@@ -53,7 +64,27 @@ public class Member {
         return password;
     }
 
+    public String getAccessToken() {
+        return accessToken;
+    }
+
     public UserRole getUserRole() {
         return userRole;
+    }
+
+    public Oauth getOauth() {
+        return oauth;
+    }
+
+    public void switchToKakao() {
+        this.oauth = Oauth.KAKAO;
+    }
+
+    public void saveAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public boolean validateToken() {
+        return accessToken != null;
     }
 }

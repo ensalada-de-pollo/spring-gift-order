@@ -6,7 +6,7 @@
     <link th:href="@{/styles/index.css}" rel="stylesheet"/>
 </head>
 <body>
-<div th:replace="~{/fragments/header.html :: headerFragment}"></div>
+<div th:replace="~{fragments/header.html :: headerFragment}"></div>
 <div class="create-button">
     <button th:onclick="|location.href='@{/create}'|">+ 상품 추가하기</button>
 </div>
@@ -23,7 +23,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="product : ${productResDTOList}">
+        <tr th:each="product : ${page.content}">
             <td th:text="${product.id()}"/>
             <td>
                 <img th:src="${product.imageURL()}" alt="Product Image" class="product-img"/>
@@ -51,6 +51,21 @@
         </tr>
         </tbody>
     </table>
+</div>
+<div class="pagination">
+    <form th:action="@{/}" method="get">
+        <input type="hidden" name="page" th:value="${page.getNumber() - 1}"/>
+        <button type="submit" th:disabled="${page.first}">
+            <
+        </button>
+    </form>
+    <span><b th:text="${page.getNumber() + 1}"></b></span>
+    <form th:action="@{/}" method="get">
+        <input type="hidden" name="page" th:value="${page.getNumber() + 1}"/>
+        <button type="submit" th:disabled="${page.isLast()}">
+            >
+        </button>
+    </form>
 </div>
 <script src="/scripts/index.js"></script>
 </body>

@@ -8,7 +8,6 @@ import gift.product.dto.request.ProductSaveRequest;
 import gift.product.dto.request.ProductUpdateRequest;
 import gift.product.dto.response.ProductResponse;
 import gift.product.repository.ProductRepository;
-import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -52,21 +51,34 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponse> findAllProducts() {
-        return productRepository.findAll()
-            .stream()
-            .map(this::convertToDTO)
-            .toList();
-    }
-
-    @Transactional(readOnly = true)
     public Page<ProductResponse> findPage(PageFindRequest pageFindRequest) {
+        Integer page = pageFindRequest.page();
+        Integer size = pageFindRequest.size();
+        Sort.Direction direction = pageFindRequest.direction();
+        String criteria = pageFindRequest.criteria();
+
+        if (page == null) {
+            page = 0;
+        }
+
+        if (size == null) {
+            size = 5;
+        }
+
+        if (direction == null) {
+            direction = Sort.Direction.ASC;
+        }
+
+        if (criteria == null) {
+            criteria = "id";
+        }
+
         Pageable pageable = PageRequest.of(
-            pageFindRequest.page(),
-            pageFindRequest.size(),
+            page,
+            size,
             Sort.by(
-                pageFindRequest.direction(),
-                pageFindRequest.criteria()
+                direction,
+                criteria
             )
         );
 

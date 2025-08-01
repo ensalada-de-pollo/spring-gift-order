@@ -1,5 +1,6 @@
 package gift.product.controller;
 
+import gift.product.dto.request.PageFindRequest;
 import gift.product.service.ProductService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,8 +17,8 @@ public class ProductViewController {
     }
 
     @GetMapping
-    public String getProducts(Model model) {
-        model.addAttribute(productService.findAllProducts());
+    public String getProducts(Model model, PageFindRequest request) {
+        model.addAttribute("page", productService.findPage(request));
         return "index";
     }
 

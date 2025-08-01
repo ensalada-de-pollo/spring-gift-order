@@ -6,7 +6,7 @@
     <link th:href="@{/styles/edit.css}" rel="stylesheet"/>
 </head>
 <body>
-<div th:replace="~{/fragments/header.html :: headerFragment}"></div>
+<div th:replace="~{fragments/header.html :: headerFragment}"></div>
 <div class="edit-form">
     <form id="product-form" th:attr="data-id=${product.id()}">
         <div class="form">

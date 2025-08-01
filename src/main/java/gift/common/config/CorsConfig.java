@@ -23,7 +23,7 @@ public class CorsConfig {
         config.setAllowCredentials(true);
         config.setExposedHeaders(List.of(HttpHeaders.AUTHORIZATION));
         config.setAllowedOriginPatterns(
-            List.of("http://localhost:3000", "http://spring-gift.store"));
+            List.of("http://localhost:3000", "https://spring-gift.store"));
         config.setMaxAge(1800L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

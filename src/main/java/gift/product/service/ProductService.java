@@ -52,33 +52,12 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> findPage(PageFindRequest pageFindRequest) {
-        Integer page = pageFindRequest.page();
-        Integer size = pageFindRequest.size();
-        Sort.Direction direction = pageFindRequest.direction();
-        String criteria = pageFindRequest.criteria();
-
-        if (page == null) {
-            page = 0;
-        }
-
-        if (size == null) {
-            size = 5;
-        }
-
-        if (direction == null) {
-            direction = Sort.Direction.ASC;
-        }
-
-        if (criteria == null) {
-            criteria = "id";
-        }
-
         Pageable pageable = PageRequest.of(
-            page,
-            size,
+            pageFindRequest.getPage(),
+            pageFindRequest.getSize(),
             Sort.by(
-                direction,
-                criteria
+                pageFindRequest.getDirection(),
+                pageFindRequest.getCriteria()
             )
         );
 

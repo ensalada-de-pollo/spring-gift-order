@@ -18,4 +18,35 @@ public record PageFindRequest(
     String criteria
 ) {
 
+    public Integer getPage() {
+        if (page == null) {
+            return 0;
+        }
+
+        return page;
+    }
+
+    public Integer getSize() {
+        if (size == null) {
+            return 5;
+        }
+
+        return size;
+    }
+
+    public Sort.Direction getDirection() {
+        if (direction == null) {
+            return Sort.Direction.ASC;
+        }
+
+        return direction;
+    }
+
+    public String getCriteria() {
+        if (criteria == null) {
+            return "id";
+        }
+
+        return criteria;
+    }
 }

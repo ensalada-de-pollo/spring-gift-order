@@ -38,9 +38,8 @@ public class Member {
 
     }
 
-    public Member(String email, String accessToken) {
+    public Member(String email) {
         this.email = email;
-        this.accessToken = accessToken;
         this.userRole = UserRole.NORMAL;
         this.oauth = Oauth.KAKAO;
     }
